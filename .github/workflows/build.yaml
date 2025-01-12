@@ -18,10 +18,10 @@ jobs:
       - name: CheckNode v
         run: node -v
 
-      # - name: BuildSrcCode
-      #   run: |
-      #     npm install
-      #     npm run build
+      - name: BuildSrcCode
+        run: |
+          npm install
+          npm run build
 
       - name: ConnectToAWS
         uses: aws-actions/configure-aws-credentials@v4
