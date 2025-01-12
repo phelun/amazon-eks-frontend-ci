@@ -78,6 +78,13 @@ jobs:
           token: ${{ secrets.ACTION_TOKEN }}
           path: manifests
 
+      - name: ConnectToAWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}          
+
       - name: ConnectToECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
