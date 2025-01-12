@@ -60,6 +60,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
+    needs: build      
     
     steps:      
       - name: Setup Kustomize
