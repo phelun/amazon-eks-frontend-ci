@@ -96,5 +96,5 @@ jobs:
           echo "Image Tag: ${{ needs.build.outputs.image_tag }}"
           ls -l manifests
           cd manifests/aws-workshop-webapp-svc/overlays/dev/
-          kustomize edit set image ${{ steps.login-ecr.outputs.registry}}/${{ steps.image-info.outputs.ecr_repository }}=${{ steps.login-ecr.outputs.registry}}/${{ steps.image-info.outputs.ecr_repository }}:${{ steps.image-info.outputs.image_tag }}
-          cat kustomization.yaml
+          kustomize edit set image ${{ needs.build.outputs.ecr_registry }}/${{ needs.build.outputs.ecr_repository }}=${{ needs.build.outputs.ecr_registry }}/${{ needs.build.outputs.ecr_repository }}:${{ needs.build.outputs.image_tag }}
+          cat kustomization.yaml          
