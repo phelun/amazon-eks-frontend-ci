@@ -1,4 +1,4 @@
-name: Build Front
+name: BuildFrontEndApp
 
 on:
   push:
@@ -12,29 +12,29 @@ jobs:
       contents: read
           
     steps:
-      - name: Checkout source code
+      - name: CheckoutSrcCode
         uses: actions/checkout@v2
 
-      - name: Check Node v
+      - name: CheckNode v
         run: node -v
 
-      - name: Build front
+      - name: BuildSrcCode
         run: |
           npm install
           npm run build
 
-      - name: Configure AWS credentials
+      - name: ConnectToAWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Login to Amazon ECR
+      - name: ConnectToECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Get image tag
+      - name: GetImageTag
         id: image
         run: |
           VERSION=$(echo "${{ github.sha }}" | cut -c1-8)
@@ -42,7 +42,7 @@ jobs:
           echo "VERSION=$VERSION"
           echo "::set-output name=version::$VERSION"
 
-      - name: BuildTagPushImage to Amazon ECR
+      - name: PushImageTag
         id: image-info
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -52,5 +52,6 @@ jobs:
           echo "ecr_repository=$ECR_REPOSITORY" >> $GITHUB_ENV
           echo "image_tag=$IMAGE_TAG" >> $GITHUB_ENV
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker image inspect $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         
