@@ -102,7 +102,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # Step 4: Update Kubernetes resources with new image tag
+      # Step 4: Update Kubernetes resource with new image tag
       - name: Update Kubernetes Resources
         run: |
           echo "ECR Registry: ${{ needs.build.outputs.ecr_registry }}"
