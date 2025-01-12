@@ -42,7 +42,7 @@ jobs:
           echo "VERSION=$VERSION"
           echo "::set-output name=version::$VERSION"
 
-      - name: Build, tag, and push image to Amazon ECR
+      - name: BuildTagPushImage to Amazon ECR
         id: image-info
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
