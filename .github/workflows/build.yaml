@@ -2,7 +2,7 @@ name: BuildFrontEndApp
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
@@ -12,67 +12,68 @@ jobs:
       contents: read
 
     steps:
-      - name: CheckoutSrcCode
+      # Step 1: Checkout source code
+      - name: Checkout Source Code
         uses: actions/checkout@v2
 
-      - name: CheckNode v
+      # Step 2: Verify Node.js version
+      - name: Check Node Version
         run: node -v
 
-      - name: BuildSrcCode
+      # Step 3: Install dependencies and build
+      - name: Build Source Code
         run: |
           npm install
           npm run build
 
-      - name: ConnectToAWS
+      # Step 4: Configure AWS credentials
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: ConnectToECR
+      # Step 5: Log in to Amazon ECR
+      - name: Log in to ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: GetImageTag
+      # Step 6: Generate image tag
+      - name: Generate Image Tag
         id: image
         run: |
           VERSION=$(echo "${{ github.sha }}" | cut -c1-8)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "version=$VERSION" >> $GITHUB_ENV
 
-      - name: PushImageTag
-        id: image-info
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: amazon-eks-frontend-ci
-          IMAGE_TAG: ${{ env.version }}
+      # Step 7: Build and tag Docker image
+      - name: Build and Tag Docker Image
         run: |
-          echo "ecr_repository=$ECR_REPOSITORY" >> $GITHUB_ENV
-          echo "image_tag=$IMAGE_TAG" >> $GITHUB_ENV
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/amazon-eks-frontend-ci:${{ env.VERSION }} .
+          echo "IMAGE=${{ steps.login-ecr.outputs.registry }}/amazon-eks-frontend-ci:${{ env.VERSION }}" >> $GITHUB_ENV
 
-      - name: TrivyVulnerabilityScanner
+      # Step 8: Scan image for vulnerabilities using Trivy
+      - name: Vulnerability Scan with Trivy
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: '${{ steps.login-ecr.outputs.registry}}/${{ steps.image-info.outputs.ecr_repository }}:${{ steps.image-info.outputs.image_tag }}'
+          image-ref: ${{ steps.login-ecr.outputs.registry }}/amazon-eks-frontend-ci:${{ env.VERSION }}
           format: 'table'
           exit-code: '0'
           ignore-unfixed: true
           vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH' 
+          severity: 'CRITICAL,HIGH'
 
-      - name: InspectPushImage
-        run: |                   
-          docker image inspect $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+      # Step 9: Push Docker image to Amazon ECR
+      - name: Push Docker Image
+        run: |
+          docker push ${{ steps.login-ecr.outputs.registry }}/amazon-eks-frontend-ci:${{ env.VERSION }}
 
     outputs:
       ecr_registry: ${{ steps.login-ecr.outputs.registry }}
       ecr_repository: amazon-eks-frontend-ci
-      image_tag: ${{ env.version }}
+      image_tag: ${{ env.VERSION }}
 
-  kustomise-cd:
+  kustomize-cd:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -80,10 +81,12 @@ jobs:
     needs: build
 
     steps:
+      # Step 1: Setup Kustomize
       - name: Setup Kustomize
         uses: imranismail/setup-kustomize@v1
 
-      - name: Checkout kustomize repository
+      # Step 2: Checkout manifests repository
+      - name: Checkout Manifests Repository
         uses: actions/checkout@v2
         with:
           repository: phelun/microservices
@@ -91,31 +94,29 @@ jobs:
           token: ${{ secrets.ACTION_TOKEN }}
           path: manifests
 
-      - name: ConnectToAWS
+      # Step 3: Configure AWS credentials
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}          
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: ConnectToECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Update Kubernetes resources
+      # Step 4: Update Kubernetes resources with new image tag
+      - name: Update Kubernetes Resources
         run: |
           echo "ECR Registry: ${{ needs.build.outputs.ecr_registry }}"
           echo "ECR Repository: ${{ needs.build.outputs.ecr_repository }}"
           echo "Image Tag: ${{ needs.build.outputs.image_tag }}"
-          ls -l manifests
           cd manifests/aws-workshop-webapp-svc/overlays/dev/
           kustomize edit set image ${{ needs.build.outputs.ecr_registry }}/${{ needs.build.outputs.ecr_repository }}=${{ needs.build.outputs.ecr_registry }}/${{ needs.build.outputs.ecr_repository }}:${{ needs.build.outputs.image_tag }}
-          cat kustomization.yaml          
+          cat kustomization.yaml
 
-      - name: Commit files
+      # Step 5: Commit changes to manifests repository
+      - name: Commit and Push Changes
         run: |
           cd manifests
           git config --global user.email "github-actions@github.com"
           git config --global user.name "github-actions"
           git commit -am "Update image tag"
-          git push -u origin main          
+          git push -u origin main
