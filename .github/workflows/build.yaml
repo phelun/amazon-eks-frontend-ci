@@ -10,7 +10,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
-          
+
     steps:
       - name: CheckoutSrcCode
         uses: actions/checkout@v2
@@ -38,31 +38,35 @@ jobs:
         id: image
         run: |
           VERSION=$(echo "${{ github.sha }}" | cut -c1-8)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "version=$VERSION" >> $GITHUB_ENV
-          echo "VERSION=$VERSION"
-          echo "::set-output name=version::$VERSION"
 
       - name: PushImageTag
         id: image-info
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: amazon-eks-frontend-ci
-          IMAGE_TAG: ${{ steps.image.outputs.version }}
+          IMAGE_TAG: ${{ env.version }}
         run: |
           echo "ecr_repository=$ECR_REPOSITORY" >> $GITHUB_ENV
           echo "image_tag=$IMAGE_TAG" >> $GITHUB_ENV
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker image inspect $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-        
+
+    outputs:
+      ecr_registry: ${{ steps.login-ecr.outputs.registry }}
+      ecr_repository: amazon-eks-frontend-ci
+      image_tag: ${{ env.version }}
+
   kustomise-cd:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
       contents: read
-    needs: build      
-    
-    steps:      
+    needs: build
+
+    steps:
       - name: Setup Kustomize
         uses: imranismail/setup-kustomize@v1
 
@@ -76,6 +80,6 @@ jobs:
 
       - name: Update Kubernetes resources
         run: |
-          echo ${{ steps.login-ecr.outputs.registry }}
-          echo ${{ steps.image-info.outputs.ecr_repository }}
-          echo ${{ steps.image-info.outputs.image_tag }}          
+          echo "ECR Registry: ${{ needs.build.outputs.ecr_registry }}"
+          echo "ECR Repository: ${{ needs.build.outputs.ecr_repository }}"
+          echo "Image Tag: ${{ needs.build.outputs.image_tag }}"
