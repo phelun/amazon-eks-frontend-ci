@@ -98,3 +98,11 @@ jobs:
           cd manifests/aws-workshop-webapp-svc/overlays/dev/
           kustomize edit set image ${{ needs.build.outputs.ecr_registry }}/${{ needs.build.outputs.ecr_repository }}=${{ needs.build.outputs.ecr_registry }}/${{ needs.build.outputs.ecr_repository }}:${{ needs.build.outputs.image_tag }}
           cat kustomization.yaml          
+
+      - name: Commit files
+        run: |
+          cd manifests
+          git config --global user.email "github-actions@github.com"
+          git config --global user.name "github-actions"
+          git commit -am "Update image tag"
+          git push -u origin main          
