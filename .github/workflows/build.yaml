@@ -28,18 +28,19 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: "eu-west-1"
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Get image tag(verion)
+      - name: Get image tag
         id: image
         run: |
-          VERSION=\$(echo \${{ github.sha }} | cut -c1-8)
-          echo VERSION=\$VERSION
-          echo "::set-output name=version::\$VERSION"
+          VERSION=$(echo "${{ github.sha }}" | cut -c1-8)
+          echo "version=$VERSION" >> $GITHUB_ENV
+          echo "VERSION=$VERSION"
+          echo "::set-output name=version::$VERSION"
 
       - name: Build, tag, and push image to Amazon ECR
         id: image-info
