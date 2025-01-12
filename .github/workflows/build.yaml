@@ -18,10 +18,10 @@ jobs:
       - name: CheckNode v
         run: node -v
 
-      - name: BuildSrcCode
-        run: |
-          npm install
-          npm run build
+      # - name: BuildSrcCode
+      #   run: |
+      #     npm install
+      #     npm run build
 
       - name: ConnectToAWS
         uses: aws-actions/configure-aws-credentials@v4
@@ -72,3 +72,9 @@ jobs:
           ref: main
           token: ${{ secrets.ACTION_TOKEN }}
           path: manifests
+
+      - name: Update Kubernetes resources
+        run: |
+          echo ${{ steps.login-ecr.outputs.registry }}
+          echo ${{ steps.image-info.outputs.ecr_repository }}
+          echo ${{ steps.image-info.outputs.image_tag }}          
