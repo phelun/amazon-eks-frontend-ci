@@ -94,6 +94,7 @@ jobs:
           echo "ECR Registry: ${{ needs.build.outputs.ecr_registry }}"
           echo "ECR Repository: ${{ needs.build.outputs.ecr_repository }}"
           echo "Image Tag: ${{ needs.build.outputs.image_tag }}"
-          cd aws-workshop-webapp-svc/overlays/dev/
+          ls -l 
+          # cd aws-workshop-webapp-svc/overlays/dev/
           kustomize edit set image ${{ steps.login-ecr.outputs.registry}}/${{ steps.image-info.outputs.ecr_repository }}=${{ steps.login-ecr.outputs.registry}}/${{ steps.image-info.outputs.ecr_repository }}:${{ steps.image-info.outputs.image_tag }}
           cat kustomization.yaml
