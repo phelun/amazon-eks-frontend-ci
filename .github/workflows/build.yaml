@@ -78,6 +78,10 @@ jobs:
           token: ${{ secrets.ACTION_TOKEN }}
           path: manifests
 
+      - name: ConnectToECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
       - name: Update Kubernetes resources
         run: |
           echo "ECR Registry: ${{ needs.build.outputs.ecr_registry }}"
